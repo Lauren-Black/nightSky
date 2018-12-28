@@ -1,12 +1,151 @@
-<!DOCTYPE html>
-<html lang="">
+<html>
+
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
+    <title>My first Three.js app</title>
+    <style>
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding 0;
+            overflow: hidden;
+            text-align: center;
+            background: #03001e;
+            /* fallback for old browsers */
+            background: -webkit-linear-gradient(to top, #7303c0, #2d0160, #03001e, #000000);
+            /* Chrome 10-25, Safari 5.1-6 */
+            background: linear-gradient(to top, #7303c0, #2d0160, #03001e, #000000);
+            /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+
+        }
+
+    </style>
 </head>
 
 <body>
-    
+    <script src="js/three.min.js"></script>
+    <script src="js/Detector.js"></script>
+    <script src="js/ColladaLoader.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/tween.min.js"></script>
+
+    <script>
+        var scene, camera, renderer, raycaster;
+        var mouse = new THREE.Vector2(),
+            INTERSECTED;
+
+        function init() {
+            //add detector to see if WebGL is supported
+            if (!Detector.webgl) Detector.addGetWebGLMessage();
+            //set up a scene
+            scene = new THREE.Scene();
+            //add a camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            //render the scene - start renderer and set it's size
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            //add to webpage
+            document.body.appendChild(renderer.domElement);
+
+            //            var backlight = new THREE.DirectionalLight(0xffffff, 2);
+            // backlight.position.set(-250, 15, -10).normalize();
+            // scene.add(backlight);
+
+            var frontlight = new THREE.DirectionalLight(0xffffff, 2);
+            frontlight.position.set(1, 1, 1).normalize();
+            frontlight.intensity = 0.5;
+            scene.add(frontlight);
+
+            var loader = new THREE.ColladaLoader();
+            loader.options.convertUpAxis = true;
+            loader.load('constellationIsland4D.dae', function(collada) {
+
+                var dae = collada.scene;
+
+                dae.traverse(function(child) {
+
+                    if (child instanceof THREE.Mesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+
+                });
+
+                dae.scale.x = dae.scale.y = dae.scale.z = 0.5;
+                dae.updateMatrix();
+                scene.add(dae);
+
+                //                var controls = new THREE.OrbitControls(camera, renderer.domElement);
+                //
+                // window.addEventListener('click', function() {
+                // console.log(camera.position);
+                //
+                // });
+
+
+                render();
+
+            });
+
+            //position camera
+            camera.position.set(280, 30, 0);
+            camera.rotation.set(0, 8.35, 0);
+
+            raycaster = new THREE.Raycaster();
+            document.addEventListener('mousemove', onDocumentMouseMove, false);
+
+            //render the scene
+            //render();
+        }
+
+        function onDocumentMouseMove(event) {
+            event.preventDefault();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        document.onmousedown = function(e) {
+            raycaster.setFromCamera(mouse, camera);
+            var intersects = raycaster.intersectObjects(scene.children, true);
+
+            if (intersects.length > 0) {
+
+                INTERSECTED = intersects[0].object;
+                if (INTERSECTED.parent.name == "tree") {
+                    INTERSECTED.position.y += 10;
+                }
+
+            }
+        }
+
+
+        function render() {
+            //call to render scene 60fps
+            requestAnimationFrame(render);
+            //            camera.lookAt(scene.position);
+
+            //speed
+            var timer = Date.now() * 0.0001;
+
+            //distance
+            //            camera.position.x = Math.cos(timer) * 250;
+            //            camera.position.z = Math.sin(timer) * 250;
+            //            camera.lookAt(scene.position);
+
+            //keep displaying scene
+            renderer.render(scene, camera);
+        }
+
+        //call the init function to run the code
+        init();
+
+    </script>
 </body>
+
 </html>
